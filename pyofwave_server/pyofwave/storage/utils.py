@@ -28,7 +28,7 @@ def load_backend(backend_name):
     
     
     # Instanciate the backend
-    datastorage =  module.DataStorage()
+    datastorage =  module.DataStore()
     logger.info("Loaded datastore backend '%s'." % backend_name)
     return datastorage
 

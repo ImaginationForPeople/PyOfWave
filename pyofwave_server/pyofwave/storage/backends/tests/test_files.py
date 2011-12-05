@@ -1,18 +1,22 @@
 import unittest
 import tempfile, os
 
-from pyofwave.storage.backends.files import FileStorage
+from pyofwave.storage.backends.files import FileStore
 
-class TestFileStorage(unittest.TestCase):
+class TestFileStore(unittest.TestCase):
     def setUp(self):
-        self.storage = FileStorage(path=os.path.join(tempfile.gettempdir(), 'pyofwave-fs-test'),
-                                   checkDomain=True)
+        self.storage = FileStore(path=os.path.join(tempfile.gettempdir(), 'pyofwave-fs-test/'),
+                                 checkDomain=True)
 
     def testNewDocument(self):
-        assert(False)
+        self.storage.newDocument('pyofwave.info!y7_8t4#')
 
-    def testGetDocument(self):
-        assert(False)
+    def testCreateGetDocument(self):
+        doc_uri = 'pyofwave.info!Zz42b3'
+        self.storage.newDocument(doc_uri)
+        doc_content = self.storage.getDocument(doc_uri)
+
+        assert(doc_content == '')
 
     def testGetDocumentVersion(self):
         assert(False)

@@ -26,8 +26,11 @@ def start(settings_mod=None):
     
     from twisted.internet import reactor
 
-    import storage # Initialize data stores
+    import storage
     import protocols
+
+    # Initialize data stores
+    storage.initialize()
 
     # Protocol interface
     protocol_server_port = 8080
