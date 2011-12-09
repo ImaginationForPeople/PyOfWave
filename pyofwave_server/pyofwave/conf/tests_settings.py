@@ -5,7 +5,7 @@ import os, tempfile
 
 from pyofwave.conf.global_settings import *
 
-DOMAIN = 'pyofwave.info'
+DOMAIN = "pyofwave.info"
 
 LOGGING['handlers'] = {
         'tmpfile_handler': {
