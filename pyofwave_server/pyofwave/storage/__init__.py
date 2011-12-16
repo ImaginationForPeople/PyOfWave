@@ -6,4 +6,8 @@ perminant storage.
 from pyofwave.conf import settings
 from .utils import load_backend
 
-datastore = load_backend(settings.DATASOURCE_STORAGE)
+datastore = None
+
+def initialize():
+    datastore = load_backend(settings.DATASOURCE_STORAGE)
+

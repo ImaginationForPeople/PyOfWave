@@ -2,66 +2,87 @@
 Provides a storage class which uses .wave & .ver files to save data.
 Not recommended for production use.  
 """
-import cPickle
+import os
+try:
+   import cPickle as pickle
+except:
+   import pickle
+
 from zope.interface import implements
 
 from pyofwave.conf import settings
 from pyofwave.core import delta
 from pyofwave.core.datasource import DataSource
 
-class FileStorage(object):
+class FileStore(object):
    """
-   A simple backing store using files to store waves
+   A simple data store using files to store waves
    """
    implements(DataSource)   
 
    def __init__(self, path=None, checkDomain=None):
       self.path = path or settings.FILESTORAGE_PATH
       self.checkDomain = checkDomain or settings.FILESTORAGE_CHECKDOMAIN
+
+      # Create target dir if necessary
+      if not os.path.exists(self.path):
+         os.makedirs(self.path)
       
    def applyDelta(self, doc, delta):
-      doc = self.filename(doc)
+      doc = self._filename(doc)
       if not doc: 
          return
       
       # update .wave file
       wavelet = delta.update(self.getDocument(doc)) # apply the delta
-      f = open(doc+".wave", 'w') # overwrite
+      f = open("%s.wave" % doc, 'w') # overwrite
       pickle.dump(wavelet, f)
       f.close()
       
       # append onto .ver file
-      f = open(doc+".ver", 'a') # append at end of file.
+      f = open(doc + ".ver", 'a') # append at end of file.
       pickle.dump(delta, f)
       f.close()
 
    def newDocument(self, doc):
-      doc = self.filename(doc, "newDocument", doc)
+      doc = self._filename(doc, "newDocument", doc)
 
       if not isinstance(doc, str):
          # XXX: Shouldn't we raise an exception here?
          return
 
-      # create the files.
-      open(doc+".wave", 'w').close()
-      open(doc+".ver", 'w').close()
+      filepath = self._filepath(doc)
 
-   def getDocument(self, doc):
-      doc = self.filename(doc, "getDocument", doc)
+      # empty ".wave" file
+      wave_filepath = filepath + '.wave'
+      fd = open(wave_filepath, 'w')
+      data = pickle.dumps("")
+      fd.write(data)
+      fd.close()
 
-      if not isinstance(doc, str):
+      # empty ".ver" file
+      ver_filepath = filepath + '.ver'
+      fd = open(ver_filepath, 'w')
+      data = pickle.dumps("")
+      fd.write(data)
+      fd.close()
+
+   def getDocument(self, doc_uri):
+      if not isinstance(doc_uri, str):
          # XXX: Shouldn't we raise an exception here?
          return doc
 
-      # unpickle current 
-      f = open(doc+".wave", 'r')
-      rep = cpickle.load(f)
-      f.close()
+      filepath = self._filepath(doc_uri, "getDocument", doc_uri)
 
-      return rep
+      # unpickle current 
+      wave_filepath = '%s.wave' % filepath
+      fd = open(wave_filepath, 'rb')
+      doc = pickle.load(fd)
+
+      return doc
 
    def getDocumentVersion(self, doc, start, end, limit):
-      doc = self.filename(doc, "getDocumentVersion", doc, start, end, limit)
+      doc = self._filename(doc, "getDocumentVersion", doc, start, end, limit)
 
       if not isinstance(doc, str):
          # XXX: Shouldn't we raise an exception here?
@@ -76,23 +97,35 @@ class FileStorage(object):
       i = 0
       
       while delta or i >= end:
-         delta = cpickle.load(f)
+         delta = pickle.load(f)
          res.append(delta)
 
       return res[start:end]
 
-   def filename(self, doc, call=None, *args):
+   def _filename(self, doc, call=None, *args):
+      """
+      Given a document URI, return a filename
+      """
       if "!" in doc:
          doc = doc.split("!")
 
          # if not in this domain, call the sucessor.
-         if doc[0] != SETTINGS.DOMAIN and not chckDomain: 
+         if doc[0] != settings.DOMAIN and not self.checkDomain: 
             if call: 
-               return getatter(self.successor, call)(*args)
+               return getattr(self.successor, call)(*args)
             return None
          
-         return path + doc[1]
+         return self.path + doc[1]
       
       return doc
 
-DataStorage = FileStorage
+   def _filepath(self, doc, call=None, *args):
+      """
+      Given a document, return the complete file path
+      """
+      filename = self._filename(doc, call, *args)
+      filepath = os.path.join(self.path, '%s' % filename)
+
+      return filepath
+
+DataStore = FileStore
