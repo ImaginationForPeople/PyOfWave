@@ -6,16 +6,25 @@ from lxml.builder import ElementMaker
 _receive = {}
 _shouldSend = {}
 
+def passUser(fn):
+	def inner(evt, *args, **kwargs):
+		fn(evt.user, *args, **kwargs)
+	return inner
+
 class OperationNS(object):
 	""" Plugin interface for operations."""
-	def __init__(self, namespace):
+	def __init__(self, namespace, events = False):
 		self.namespace = namespace
 		self.E = ElementMaker(namespace = namespace)
+		if events: self._wrap = None
+		else: self._wrap = passUser
 
 	def receive(self, callback):
 		"""Register callback to be called for 
 			"{%s}%s" % self.namespace, callback.__name__."""
-		return self._register(_receive, callback.__name__, callback)
+		name = callback.__name__ # breaks when accessed after the wrap.
+		if self._wrap: callback = self._wrap(callback)
+		return self._register(_receive, name, callback)
 		
 	def shouldSend(self, xQuery):
 		"""Determines if a delta translates to this event (tag). """
