@@ -3,129 +3,84 @@ Provides a storage class which uses .wave & .ver files to save data.
 Not recommended for production use.  
 """
 import os
-try:
-   import cPickle as pickle
-except:
-   import pickle
 
+from lxml import etree
 from zope.interface import implements
 
 from pyofwave.conf import settings
-from pyofwave.core import delta
-from pyofwave.core.datasource import DataSource
+from pyofwave.core.datasource import DataSource, DataStoreError
+from pyofwave.core.document import Document
 
 class FileStore(object):
-   """
-   A simple data store using files to store waves
-   """
-   implements(DataSource)   
+    """
+    A simple data store using files to store waves
+    """
+    implements(DataSource)    
 
-   def __init__(self, path=None, checkDomain=None):
-      self.path = path or settings.FILESTORAGE_PATH
-      self.checkDomain = checkDomain or settings.FILESTORAGE_CHECKDOMAIN
+    def __init__(self, path=None, checkDomain=None):
+        self.path = path or settings.FILESTORAGE_PATH
+        self.checkDomain = checkDomain or settings.FILESTORAGE_CHECKDOMAIN
+        self.dtd = etree.DTD(open("/home/alban/dev/perso/pyofwave-env/PyOfWave/docs/protocols/wave protocol DTDs/doc.dtd",  'rb'))
 
-      # Create target dir if necessary
-      if not os.path.exists(self.path):
-         os.makedirs(self.path)
-      
-   def applyDelta(self, doc, delta):
-      doc = self._filename(doc)
-      if not doc: 
-         return
-      
-      # update .wave file
-      wavelet = delta.update(self.getDocument(doc)) # apply the delta
-      f = open("%s.wave" % doc, 'w') # overwrite
-      pickle.dump(wavelet, f)
-      f.close()
-      
-      # append onto .ver file
-      f = open(doc + ".ver", 'a') # append at end of file.
-      pickle.dump(delta, f)
-      f.close()
+        # Create target dir if necessary
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+        
+    def save_document(self, aDocument):
+        document_path = self._filepath(aDocument.uri)
+        try:
+            xml_content = etree.fromstring(aDocument.content)
+            if self.dtd.validate(xml_content):
+                # an existing document with the same name will be erased
+                with open(document_path, 'w') as document_file:
+                    document_file.write(etree.tostring(xml_content, 
+                                                       xml_declaration=True,
+                                                       encoding='utf-8',
+                                                       pretty_print=True))
+            else:
+                raise DataStoreError("ERROR: Document can not be saved : xml content is not valid")
+        except:
+            raise
+            
 
-   def newDocument(self, doc):
-      doc = self._filename(doc, "newDocument", doc)
-
-      if not isinstance(doc, str):
-         # XXX: Shouldn't we raise an exception here?
-         return
-
-      filepath = self._filepath(doc)
-
-      # empty ".wave" file
-      wave_filepath = filepath + '.wave'
-      fd = open(wave_filepath, 'w')
-      data = pickle.dumps("")
-      fd.write(data)
-      fd.close()
-
-      # empty ".ver" file
-      ver_filepath = filepath + '.ver'
-      fd = open(ver_filepath, 'w')
-      data = pickle.dumps("")
-      fd.write(data)
-      fd.close()
-
-   def getDocument(self, doc_uri):
-      if not isinstance(doc_uri, str):
-         # XXX: Shouldn't we raise an exception here?
-         return doc
-
-      filepath = self._filepath(doc_uri, "getDocument", doc_uri)
-
-      # unpickle current 
-      wave_filepath = '%s.wave' % filepath
-      fd = open(wave_filepath, 'rb')
-      doc = pickle.load(fd)
-
-      return doc
-
-   def getDocumentVersion(self, doc, start, end, limit):
-      doc = self._filename(doc, "getDocumentVersion", doc, start, end, limit)
-
-      if not isinstance(doc, str):
-         # XXX: Shouldn't we raise an exception here?
-         return doc
-
-      if (end - start) > limit: 
-         end = start + limit # ensure the limit is met.
-
-      # load data
-      f = open(doc+".ver", 'r')
-      res = []
-      i = 0
-      
-      while delta or i >= end:
-         delta = pickle.load(f)
-         res.append(delta)
-
-      return res[start:end]
-
-   def _filename(self, doc, call=None, *args):
-      """
-      Given a document URI, return a filename
-      """
-      if "!" in doc:
-         doc = doc.split("!")
-
-         # if not in this domain, call the sucessor.
-         if doc[0] != settings.DOMAIN and not self.checkDomain: 
-            if call: 
-               return getattr(self.successor, call)(*args)
+    def get_document(self, doc_uri):
+        document_path = self._filepath(doc_uri)
+        
+        if not os.path.exists(document_path):
+            # XXX : should raise an exception ?
             return None
-         
-         return self.path + doc[1]
-      
-      return doc
+        
+        try:
+            xml_tree = etree.parse(document_path)
+            if self.dtd.validate(xml_tree):
+                return Document(uri=doc_uri,
+                                content=etree.tostring(xml_tree),
+                                aDataStore=self)
+            else:
+                raise DataStoreError("ERROR: Document can not be saved : xml content is not valid")
+        except:
+            raise
+        
 
-   def _filepath(self, doc, call=None, *args):
-      """
-      Given a document, return the complete file path
-      """
-      filename = self._filename(doc, call, *args)
-      filepath = os.path.join(self.path, '%s' % filename)
+    def get_document_version(self, doc_uri, version):
+        raise NotImplementedError
 
-      return filepath
+    def _filename(self, doc_uri):
+        """
+        Given a document URI, return a filename
+        """
+        if "!" in doc_uri:
+            return doc_uri.split("!")[1]
+        
+        return doc_uri
+
+    def _filepath(self, doc_uri):
+        """
+        Given a document, return the complete file path
+        """
+        filename = self._filename(doc_uri)
+        filepath = os.path.join(self.path, '%s' % filename)
+
+        return filepath
 
 DataStore = FileStore
