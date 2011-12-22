@@ -20,7 +20,7 @@ class FileStore(object):
     def __init__(self, path=None, checkDomain=None):
         self.path = path or settings.FILESTORAGE_PATH
         self.checkDomain = checkDomain or settings.FILESTORAGE_CHECKDOMAIN
-        self.dtd = etree.DTD(open("/home/alban/dev/perso/pyofwave-env/PyOfWave/docs/protocols/wave protocol DTDs/doc.dtd",  'rb'))
+        self.dtd = etree.DTD(open("../../docs/protocols/wave protocol DTDs/doc.dtd",  'rb'))
 
         # Create target dir if necessary
         if not os.path.exists(self.path):
