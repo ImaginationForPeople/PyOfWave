@@ -13,7 +13,7 @@ class TestFileStore(unittest.TestCase):
         for filename in os.listdir(self.temp_dir):
             filepath = os.path.join(self.temp_dir, filename)
             os.remove(filepath)
-        
+
         self.storage = FileStore(path=self.temp_dir,
                                  checkDomain=True)
 
@@ -22,40 +22,32 @@ class TestFileStore(unittest.TestCase):
                         <select href="foo" range="2" version="2" />
                         <text>hello world</text>
                     </doc>"""
-        
+
         document = Document(uri="pyofwave.info!foo", content=content)
-        
+
         self.storage.save_document(aDocument=document)
         expected_file = os.path.join(self.temp_dir, "foo")
-        self.assertTrue( os.path.exists(expected_file))
-        
+        self.assertTrue(os.path.exists(expected_file))
+
         content = """<doc>
                         <text>hello world</text>
                     </doc>"""
-        
+
         document = Document(uri="pyofwave.info!bar", content=content)
         self.assertRaises(DataStoreError, self.storage.save_document, (document))
         not_expected_file = os.path.join(self.temp_dir, "bar")
         self.assertFalse(os.path.exists(not_expected_file))
-        
 
     def testGetDocument(self):
         uri = "pyofwave.info!foo"
-        
+
         content = """<doc>
                         <select href="foo" range="2" version="2" />
                         <text>hello world</text>
-                    </doc>"""        
+                    </doc>"""
         document = Document(uri=uri, content=content)
-        
+
         self.storage.save_document(aDocument=document)
-        
+
         retrieved_document = self.storage.get_document(doc_uri=uri)
         self.assertTrue(retrieved_document != None)
-        
-        
-        
-
-
-
-
