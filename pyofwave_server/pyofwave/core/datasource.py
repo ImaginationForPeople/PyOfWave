@@ -1,34 +1,35 @@
 """
-Contains standard interfaces for dataSources. 
+Contains standard interfaces for dataSources.
 """
 from zope import interface
 
+
 class DataSource(interface.Interface):
     """
-    Standard interface for a dataSource. 
+    Standard interface for a dataSource.
     """
     def save_document(aDocument):
         """
-        generate a new document.
+        Save (or create if not existing) a document
         """
         raise NotImplementedError
 
     def get_document(doc_uri):
         """
-        returns the specified document.
+        Retrieve the document from the DataSource.
         """
         raise NotImplementedError
 
     def get_document_version(doc_uri, version):
         """
-        Returns the delta for the specified versions. 
+        Retrieve the document at the specified version. 
         """
         raise NotImplementedError
+
 
 class DataStoreError(Exception):
     def __init__(self, value):
         self.value = value
-        
+
     def __str__(self):
         return repr(self.value)
-

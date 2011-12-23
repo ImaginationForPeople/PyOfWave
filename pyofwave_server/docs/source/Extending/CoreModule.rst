@@ -18,30 +18,25 @@ core.datasource
 
    DataSource <|.. PREFERENCES.STORAGE_OBJECT
 
-   DataSource : newDocument()
-   DataSource : getDocument(string url)
-   DataSource : getDocumentVersion(string url, int start, int end, int limit)
-   DataSource : searchDocuments(string user, string search)
-   DataSource : setTags(string doc, string user, string[] **tags)
+   DataSource : save_document(aDocument)
+   DataSource : def get_document(doc_uri)
+   DataSource : def get_document_version(doc_uri, version)
 
-The interface DataSource provides access to persistant XML following the wave schema. LXML is used to represent the XML files.
+The interface DataSource provides access to persistant XML following the wave schema. 
 
-.. py:method:: newDocument()
+.. py:method:: save_document(aDocument)
 
-   Creates a new document in the DataSource. Returns the 
-   blank :py:class:`lxml.etree.ElementBase` object if successful. 
+   Save (or create if not existing) a document.
 
-.. py:method:: getDocument(url)
+.. py:method:: get_document(doc_uri)
 
-   Loads the document from the DataSource. Returns a :py:class:`lxml.etree.ElementBase` object. 
+   Retrieve the document from the DataSource. 
+   Returns a :py:class:`pyofwave.core.document.Document` object. 
 
-.. py:method:: getDocumentVersion(url, start, end, limit)
+.. py:method:: get_document_version(doc_uri, version)
 
-   Loads the document at the specified times. Returns a iterable of :py:class:`lxml.etree.ElementBase` objects. 
-
-.. py:method:: searchDocuments(user, search)
-
-   Returns a list of wave URLs to documents that match the search in the form of an xQuery conditional :py:class:`String` object.
+   Retrieve the document at the specified version. 
+   Returns a :py:class:`pyofwave.core.document.Document` object.
 
 core.delta
 ==========
