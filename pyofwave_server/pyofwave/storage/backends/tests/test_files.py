@@ -10,6 +10,9 @@ from pyofwave.storage.backends.files import FileStore
 class TestFileStore(unittest.TestCase):
     def setUp(self):
         self.temp_dir = os.path.join(tempfile.gettempdir(), 'pyofwave-fs-test/')
+        if not os.path.exists(self.temp_dir):
+            os.makedirs(self.temp_dir)
+        
         for filename in os.listdir(self.temp_dir):
             filepath = os.path.join(self.temp_dir, filename)
             os.remove(filepath)
