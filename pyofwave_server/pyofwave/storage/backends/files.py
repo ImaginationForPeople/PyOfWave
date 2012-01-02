@@ -1,6 +1,6 @@
 """
 Provides a storage class which uses .wave & .ver files to save data.
-Not recommended for production use.  
+Not recommended for production use.
 """
 import os
 
@@ -11,11 +11,12 @@ from pyofwave.conf import settings
 from pyofwave.core.datasource import DataSource, DataStoreError
 from pyofwave.core.document import Document
 
+
 class FileStore(object):
     """
     A simple data store using files to store waves
     """
-    implements(DataSource)    
+    implements(DataSource)
 
     def __init__(self, path=None, checkDomain=None):
         self.path = path or settings.FILESTORAGE_PATH
@@ -25,7 +26,7 @@ class FileStore(object):
         # Create target dir if necessary
         if not os.path.exists(self.path):
             os.makedirs(self.path)
-        
+
     def save_document(self, aDocument):
         document_path = self._filepath(aDocument.uri)
         try:
@@ -41,15 +42,14 @@ class FileStore(object):
                 raise DataStoreError("ERROR: Document can not be saved : xml content is not valid")
         except:
             raise
-            
 
     def get_document(self, doc_uri):
         document_path = self._filepath(doc_uri)
-        
+
         if not os.path.exists(document_path):
             # XXX : should raise an exception ?
             return None
-        
+
         try:
             xml_tree = etree.parse(document_path)
             if self.dtd.validate(xml_tree):
@@ -60,7 +60,6 @@ class FileStore(object):
                 raise DataStoreError("ERROR: Document can not be saved : xml content is not valid")
         except:
             raise
-        
 
     def get_document_version(self, doc_uri, version):
         raise NotImplementedError
@@ -71,7 +70,7 @@ class FileStore(object):
         """
         if "!" in doc_uri:
             return doc_uri.split("!")[1]
-        
+
         return doc_uri
 
     def _filepath(self, doc_uri):
