@@ -2,13 +2,26 @@ import pyofwave.storage
 
 class Document(object):
     """
-    A document is piece of XML linked to an URI, that can be stored
-    into a datastore and on which operations can be applied to
-    transform it.
+    Abstract Class.
+    
+    A document is a unit of content attached to a wavelet. Two basic
+    types of documents exist within the Wave API: Blips and Data
+    Documents.
+
+    Although blips and data documents are each "documents", in
+    practice, you treat them quite separately. Each blip consists of
+    markup (similar to XML) which can be retrieved, modified or added by
+    the API. Generally, you manage the blip through convenience methods
+    rather than through direct manipulation of the XML data
+    structure. Blips are very structured, while data documents may have no
+    intrinsic schema (though often contain their one self-defined
+    structure).
+    
+    A Document is referenced by its URI, can be stored into a datastore and
+    operations can be applied to transform it.
     """
-    def __init__(self, uri, content="", aDataStore=None):
+    def __init__(self, uri, aDataStore=None):
         self.uri = uri
-        self.content = content
         self.datastore = aDataStore
 
     @classmethod
@@ -37,17 +50,6 @@ class Document(object):
             
         return aDataStore.save_document(self)
                 
-    @property
-    def length(self):
-        """
-        The length of the xml content
-        """
-        return len(self.content)
 
     def __str__(self):
         return "%s: %s" % (self.uri, self.content)
-
-
-
-
-
