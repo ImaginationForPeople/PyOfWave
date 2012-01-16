@@ -1,10 +1,10 @@
 import unittest
 
 from pyofwave.action.document import Retain, InsertCharacters
-from pyofwave.core.document import Document
+from pyofwave.core.document.blip import Blip
 from pyofwave.core.operation import OperationBase
 
-class TestDocumentActions(unittest.TestCase):
+class TestBlipActions(unittest.TestCase):
     def testRetain(self):
         class TestOperation(OperationBase):
             def scenario(self):
@@ -12,7 +12,7 @@ class TestDocumentActions(unittest.TestCase):
                 yield Retain(2)
                 yield Retain(2)
 
-        doc = Document(uri='nowhere', content='Hello')
+        doc = Blip(uri='nowhere', content='Hello')
 
         op = TestOperation()
         op.do(doc)
@@ -26,7 +26,7 @@ class TestDocumentActions(unittest.TestCase):
                 yield InsertCharacters('go')
                 yield Retain(3)
 
-        doc = Document(uri='nowhere', content='Hello')
+        doc = Blip(uri='nowhere', content='Hello')
 
         op = TestOperation()
         op.do(doc)

@@ -9,7 +9,7 @@ from zope.interface import implements
 
 from pyofwave.conf import settings
 from pyofwave.core.datasource import DataSource, DataStoreError
-from pyofwave.core.document import Document
+from pyofwave.core.document.blip import Blip
 
 
 class FileStore(object):
@@ -44,6 +44,9 @@ class FileStore(object):
             raise
 
     def get_document(self, doc_uri):
+        """
+        XXX: Currently returns a Blip Only
+        """
         document_path = self._filepath(doc_uri)
 
         if not os.path.exists(document_path):
@@ -53,7 +56,7 @@ class FileStore(object):
         try:
             xml_tree = etree.parse(document_path)
             if self.dtd.validate(xml_tree):
-                return Document(uri=doc_uri,
+                return Blip(uri=doc_uri,
                                 content=etree.tostring(xml_tree),
                                 aDataStore=self)
             else:

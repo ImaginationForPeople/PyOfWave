@@ -5,7 +5,7 @@ import lxml.etree
 
 from pyofwave.action.document import Retain, InsertCharacters
 from pyofwave.core import operation, opdev
-from pyofwave.core.document import Document
+from pyofwave.core.document.blip import Blip
 from pyofwave.core.operation import OperationBase, XMLOperation
 
 ns = "pyofwave.info/2012/dtd/document.dtd"
@@ -23,7 +23,7 @@ class TestOperations(unittest.TestCase):
                       )
             )
 
-        doc = Document(uri='nowhere', content='Hello')
+        doc = Blip(uri='nowhere', content='Hello')
 
         op = XMLOperation(lxml.etree.tostring(xml))
         op.do(doc)
@@ -41,7 +41,7 @@ class TestOperations(unittest.TestCase):
                 yield InsertCharacters('go')
                 yield Retain(3)
 
-        doc = Document(uri='nowhere', content='Hello')
+        doc = Blip(uri='nowhere', content='Hello')
 
         op = TestOperation()
         op.do(doc)

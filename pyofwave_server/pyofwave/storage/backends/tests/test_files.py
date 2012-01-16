@@ -3,7 +3,7 @@ import tempfile
 import os
 
 from pyofwave.core.datasource import DataStoreError
-from pyofwave.core.document import Document
+from pyofwave.core.document.blip import Blip
 from pyofwave.storage.backends.files import FileStore
 
 
@@ -20,13 +20,13 @@ class TestFileStore(unittest.TestCase):
         self.storage = FileStore(path=self.temp_dir,
                                  checkDomain=True)
 
-    def testSaveDocument(self):
+    def testSaveBlip(self):
         content = """<doc>
                         <select href="foo" range="2" version="2" />
                         <text>hello world</text>
                     </doc>"""
 
-        document = Document(uri="pyofwave.info!foo", content=content)
+        document = Blip(uri="pyofwave.info!foo", content=content)
 
         self.storage.save_document(aDocument=document)
         expected_file = os.path.join(self.temp_dir, "foo")
@@ -36,7 +36,7 @@ class TestFileStore(unittest.TestCase):
                         <text>hello world</text>
                     </doc>"""
 
-        document = Document(uri="pyofwave.info!bar", content=content)
+        document = Blip(uri="pyofwave.info!bar", content=content)
         self.assertRaises(DataStoreError, self.storage.save_document, (document))
         not_expected_file = os.path.join(self.temp_dir, "bar")
         self.assertFalse(os.path.exists(not_expected_file))
@@ -48,7 +48,7 @@ class TestFileStore(unittest.TestCase):
                         <select href="foo" range="2" version="2" />
                         <text>hello world</text>
                     </doc>"""
-        document = Document(uri=uri, content=content)
+        document = Blip(uri=uri, content=content)
 
         self.storage.save_document(aDocument=document)
 

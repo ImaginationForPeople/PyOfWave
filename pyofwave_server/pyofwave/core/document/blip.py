@@ -1,7 +1,7 @@
 from . import Document
 
 from .annotation import Annotations
-from .item import DocumentStreamItem
+from .item import DocumentItemStream
 
 class Blip(Document):
     """
@@ -15,7 +15,7 @@ class Blip(Document):
         self.content = content
 
         self.annotations = Annotations()
-        self.stream = None
+        self.stream = DocumentItemStream()
         
     
     def __len__(self):

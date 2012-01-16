@@ -23,7 +23,7 @@ class Retain(ActionBase):
 
     def do(self, aDocument, cursor_position):
         future_cursor_position = cursor_position + self.amount
-        assert(aDocument.length >= future_cursor_position)
+        assert(len(aDocument) >= future_cursor_position)
         return future_cursor_position
 
     def to_xml_etree(self):
