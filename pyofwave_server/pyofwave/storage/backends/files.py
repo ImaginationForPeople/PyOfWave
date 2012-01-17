@@ -2,6 +2,7 @@
 Provides a storage class which uses .wave & .ver files to save data.
 Not recommended for production use.
 """
+import logging
 import os
 
 from lxml import etree
@@ -11,6 +12,7 @@ from pyofwave.conf import settings
 from pyofwave.core.datasource import DataSource, DataStoreError
 from pyofwave.core.document.blip import Blip
 
+logger = logging.getLogger("pyofwave.server")
 
 class FileStore(object):
     """
@@ -21,14 +23,20 @@ class FileStore(object):
     def __init__(self, path=None, checkDomain=None):
         self.path = path or settings.FILESTORAGE_PATH
         self.checkDomain = checkDomain or settings.FILESTORAGE_CHECKDOMAIN
-        self.dtd = etree.DTD(open("../../docs/protocols/wave protocol DTDs/doc.dtd",  'rb'))
+        self.dtd = etree.DTD(open("../docs/protocols/wave protocol DTDs/doc.dtd",  'rb'))
 
         # Create target dir if necessary
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
-    def save_document(self, aDocument):
+    def save_document(self, aDocument):        
         document_path = self._filepath(aDocument.uri)
+
+        logger.debug('[%s] Saving document "%s" to "%s"' % (self.__class__.__name__,
+                                                            aDocument.uri,
+                                                            document_path)
+                     )
+        
         try:
             xml_content = etree.fromstring(aDocument.content)
             if self.dtd.validate(xml_content):
@@ -46,23 +54,30 @@ class FileStore(object):
     def get_document(self, doc_uri):
         """
         XXX: Currently returns a Blip Only
-        """
+        XXX: Does not really read a blip from the storage
+        """                                                      
         document_path = self._filepath(doc_uri)
+
+        logger.debug('[%s] Getting document "%s" from "%s"' % (self.__class__.__name__,
+                                                               doc_uri,
+                                                               document_path)
+                     )
+
 
         if not os.path.exists(document_path):
             # XXX : should raise an exception ?
-            return None
+            raise "XXX: This document does not exist"
 
         try:
             xml_tree = etree.parse(document_path)
             if self.dtd.validate(xml_tree):
                 return Blip(uri=doc_uri,
-                                content=etree.tostring(xml_tree),
-                                aDataStore=self)
+                            content=etree.tostring(xml_tree),
+                            aDataStore=self)
             else:
                 raise DataStoreError("ERROR: Document can not be saved : xml content is not valid")
         except:
-            raise
+            raise "XXX: Should have an exception here!"
 
     def get_document_version(self, doc_uri, version):
         raise NotImplementedError
