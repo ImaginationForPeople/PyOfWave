@@ -7,21 +7,33 @@ Loose XMPP wrapper around operations and their events.
 import xmpp
 from pyofwave.core import opdev, operation
 
+from pyofwave.core.operation import OPERATION_REGISTRY
+
 class WaveProtocol(xmpp.ServerCore):
-    
     def __init__(self, stream):
 	self.events = None
         super(WaveProtocol, self).__init__(stream, jid="serverjid") # XXX: hardcoded JID
 
     def is_stanza(self, name):
-        return super(WaveProtocol, self).is_stanza(name) or name in opdev._receive.keys()
+        return super(WaveProtocol, self).is_stanza(name) or name in OPERATION_REGISTRY
 
     def handle_stanza(self, el):
-        super(WaveProtocol, self).handle_stanza(el)
-        operation.handleOperation(self.events, el)
+        # super(WaveProtocol, self).handle_stanza(el)
+        from pyofwave.core.operation import XMLOperation
+        from pyofwave.core.document.blip import Blip
+
+
+        # XXX: Replace this by a plugin
+        target_type = OPERATION_REGISTRY[el.tag]
+
+        target = target_type.load(uri=el.attrib['uri'])
+        
+        op = XMLOperation(el)
+        op.do(target)
+        # operation.handleOperation(self.events, el)
 
     def info_query(self, elem):
-        # Same as in xmpp.Core, slight change in handling
+        # Same as in xmpp.Core, slight change in handling # XXX: Please explain the goal
         if not self.authJID:
             return self.stream_error('not-authorized')
 

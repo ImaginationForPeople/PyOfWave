@@ -16,22 +16,20 @@ class TestOperations(unittest.TestCase):
 
     def testPerformXMLOperation(self):
         # Write an operation in XML, inserting "go" at position 2
-        xml = self.E.doc(
-            self.E.op(self.E.retain(amount="2"),
-                      self.E.insertCharacters(characters="go"),
-                      self.E.retain(amount="3")
-                      )
-            )
+        xml = self.E.op(self.E.retain(amount="2"),
+                        self.E.insertCharacters(characters="go"),
+                        self.E.retain(amount="3")
+                        )
 
         doc = Blip(uri='nowhere', content='Hello')
 
-        op = XMLOperation(lxml.etree.tostring(xml))
+        op = XMLOperation(xml)
         op.do(doc)
 
         self.assertEqual(doc.content, "Hegollo")
 
         # Compare we can restitute the same XML from the Operation
-        self.assertEqual(lxml.etree.tostring(self.E.doc(op.to_xml_etree())),
+        self.assertEqual(lxml.etree.tostring(op.to_xml_etree()),
                          lxml.etree.tostring(xml))
 
     def testPerformOperation(self):

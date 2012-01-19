@@ -1,5 +1,7 @@
 """
 Underlaying API for creating operations.
+
+XXX: Remove this file? I think it's now useless
 """
 from lxml.builder import ElementMaker
 

@@ -12,14 +12,21 @@ import opdev, delta
 from pyofwave.utils.command import CommandInterface
 from .action import ACTION_REGISTRY
 
+from pyofwave.core.document.blip import Blip
+
+# Should be replaced by a xmpp.Plugin
+OPERATION_REGISTRY = {
+    '{pyofwave.info/2012/dtd/document.dtd}op': Blip
+    }
+
 class OperationBase(object):
     """
     An operation is a transformation that alters an entity (blip,
-    document, ...) and is made of one or more Actions.
+    document, wave, ...) and is made of one or more Actions.
     """
     interface.implements(CommandInterface)
-    
-    def do(self, aDocument):
+
+    def do(self, aTarget):
         """
         Perform the operation using the scenario
         """
@@ -27,10 +34,10 @@ class OperationBase(object):
 
         # Apply transformations using actions
         for action in self.scenario():
-            cursor_position = action.do(aDocument=aDocument,
+            cursor_position = action.do(aDocument=aTarget,
                                         cursor_position=cursor_position)
 
-        assert(len(aDocument) == cursor_position)
+        assert(len(aTarget) == cursor_position)
         
     def scenario(self):
         """
@@ -66,10 +73,12 @@ class XMLOperation(OperationBase):
         self.xml = xml
     
     def scenario(self):
-        root = lxml.etree.fromstring(self.xml)
-        
+        # root = lxml.etree.fromstring(self.xml)
+        root = self.xml
+
         # XXX This namespace shouldn't be hardcoded
-        operation_tag = root.find(".//{pyofwave.info/2012/dtd/document.dtd}op")
+        # operation_tag = root.find(".//{pyofwave.info/2012/dtd/document.dtd}op")
+        operation_tag = root
 
         for element in operation_tag.iterchildren():
             # Lookup the action name (using: "{NS}NAME") from the
@@ -83,23 +92,6 @@ class XMLOperation(OperationBase):
 
             else:
                 raise OperationError("Unknown Action: %s" % element.tag)
-
-# Perform operation
-def _getChildren(tag):
-    rep = [tag.text, ]
-    for child in tag:
-        rep.append(child)
-        rep.append(child.tail)
-    return rep
-
-def performOperation(event, operation):
-    """
-    Execute an operation.
-    """
-    rep = opdev._receive[operation.tag](event, *_getChildren(operation), **operation.attrib)
-
-    EventRegisty.notify(operation)
-    return rep
 
 # Events
 def get(obj, prop, default = {}):

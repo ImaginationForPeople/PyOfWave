@@ -54,7 +54,7 @@ class FileStore(object):
     def get_document(self, doc_uri):
         """
         XXX: Currently returns a Blip Only
-        XXX: Does not really read a blip from the storage
+        XXX: Does not really read a blip from the storage?
         """                                                      
         document_path = self._filepath(doc_uri)
 
