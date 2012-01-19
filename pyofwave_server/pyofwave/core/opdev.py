@@ -1,5 +1,7 @@
 """
 Underlaying API for creating operations.
+
+XXX: Remove this file? I think it's now useless
 """
 from lxml.builder import ElementMaker
 
@@ -13,21 +15,25 @@ def passUser(fn):
 
 class OperationNS(object):
 	""" Plugin interface for operations."""
-	def __init__(self, namespace, events = False):
+	def __init__(self, namespace, events=False):
 		self.namespace = namespace
-		self.E = ElementMaker(namespace = namespace)
+		self.E = ElementMaker(namespace=namespace)
 		if events: self._wrap = None
 		else: self._wrap = passUser
 
 	def receive(self, callback):
-		"""Register callback to be called for 
-			"{%s}%s" % self.namespace, callback.__name__."""
+		"""
+		Register callback to be called for "{%s}%s" %
+		self.namespace, callback.__name__.
+		"""
 		name = callback.__name__ # breaks when accessed after the wrap.
 		if self._wrap: callback = self._wrap(callback)
 		return self._register(_receive, name, callback)
 		
 	def shouldSend(self, xQuery):
-		"""Determines if a delta translates to this event (tag). """
+		"""
+		Determines if a delta translates to this event (tag).
+		"""
 		S = None
 		cb = None
 		def inner(fn):
@@ -36,7 +42,7 @@ class OperationNS(object):
 			cb = fn
 
 			self._register(_shouldSend, name, callback)
-			return inner
+			return inner # WTF ?
 
 		def callback(doc, delta):
 			""" Checks xQuery then cb. """

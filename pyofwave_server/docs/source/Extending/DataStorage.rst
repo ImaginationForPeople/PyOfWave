@@ -13,30 +13,28 @@ The datasource needs to be set up to be able to store PyOfWave documents before 
 
 Add a new Python file in datasource (doesn't really matter if you put it there) and code::
 
-   from pyofwave.core import datasource
-   from zope.interface import implements
+       from pyofwave.core import datasource
+       from zope.interface import implements
 
-   class MyDataStorage(object):
-      implements(datasource.Datasource)
-
-      def newDocument(self, doc):
-         """Create a new Document in datastorage."""
-
-      def getDocument(self, doc):
-         """Retrieve document named doc (which includes the domain) and 
-            return as a Document object."""
-
-      def getDocumentVersion(self, doc, start, end, limit):
-         """Retrieve specified deltas for the document and 
-            return as Delta objects."""
-
-      def searchDocuments(self, user, search):
-         """Retrieve a list of document names which match the tags 
-            provided by setTags."""
-
-      def applyDelta(self, doc, delta):
-         """Save the delta to the user. Use applyDelta(doc, delta) 
-            if you need to store the complete current document. """
+       class MyDataStorage(object):
+            implements(datasource.Datasource)
+    
+            def save_document(aDocument):
+                """
+                Save (or create if not existing) a document
+                """
+                raise NotImplementedError
+        
+            def get_document(doc_uri):
+                """
+                Retrieve the document from the DataSource.
+                """
+                raise NotImplementedError
+        
+            def get_document_version(doc_uri, version):
+                """
+                Retrieve the document at the specified version. 
+                """
 
 Implement the methods. 
 

@@ -1,39 +1,60 @@
 import unittest
+
 from lxml.builder import ElementMaker
+import lxml.etree
 
+from pyofwave.action.document import Retain, InsertCharacters
 from pyofwave.core import operation, opdev
+from pyofwave.core.document.blip import Blip
+from pyofwave.core.operation import OperationBase, XMLOperation
 
-ns = "pyofwave.info/test"
-E = ElementMaker(namespace=ns)
+ns = "pyofwave.info/2012/dtd/document.dtd"
 
 class TestOperations(unittest.TestCase):
-    def testCreateOperation(self):
-        NS = opdev.OperationNS(ns, events = True)
+    def setUp(self):
+        self.E = ElementMaker(namespace=ns)
 
-        @NS
-        def op(event, arg, tag, text, action):
-            self.assertEqual(event, "AnEventToTrigger")
-            self.assertEqual(arg, "Hello")
-            self.assertEqual(tag.tag, "{%s}tag" % ns)
-            self.assertEqual(text, "World")
-            self.assertEqual(action, "SayHello")
-            return NS.E.response("success", status = "400")
+    def testPerformXMLOperation(self):
+        # Write an operation in XML, inserting "go" at position 2
+        xml = self.E.op(self.E.retain(amount="2"),
+                        self.E.insertCharacters(characters="go"),
+                        self.E.retain(amount="3")
+                        )
+
+        doc = Blip(uri='nowhere', content='Hello')
+
+        op = XMLOperation(xml)
+        op.do(doc)
+
+        self.assertEqual(doc.content, "Hegollo")
+
+        # Compare we can restitute the same XML from the Operation
+        self.assertEqual(lxml.etree.tostring(op.to_xml_etree()),
+                         lxml.etree.tostring(xml))
 
     def testPerformOperation(self):
-        res = operation.performOperation("AnEventToTrigger",
-                                         E.op("Hello",
-                                              E.tag(),
-                                              "World",
-                                              action="SayHello"))
+        class TestOperation(OperationBase):
+            def scenario(self):
+                yield Retain(2)
+                yield InsertCharacters('go')
+                yield Retain(3)
+
+        doc = Blip(uri='nowhere', content='Hello')
+
+        op = TestOperation()
+        op.do(doc)
+
+        self.assertEqual(doc.content, "Hegollo")
         
-        self.assertEqual(res.text, "success")
-        self.assertEqual(res.get("status"), "400")
-#
+        
 class TestEventRegisty(unittest.TestCase):
+    def setUp(self):
+        self.E = ElementMaker(namespace=ns)
+
     def testEventRegisty(self):
-        #Define a test context
+        # Define a test context
         res = {"value": "FOO"}
-        #Define a function used as event callback that will modify the context
+        # Define a function used as event callback that will modify the context
         def misc(*args, **kwargs):
             res["value"] = "BAR"
         
@@ -50,23 +71,23 @@ class TestEventRegisty(unittest.TestCase):
         def op(event, *args, **kwargs): pass
 
         # Test that event isn't triggered before register
-        operation.performOperation(event_registry, E.op(href=url))
+        operation.performOperation(event_registry, self.E.op(href=url))
         self.assertEqual(res["value"],"FOO")
 
         # Trigger event
         event_registry.register(url, "{%s}op" % ns)
-        operation.performOperation(event_registry, E.op(href=url))
+        operation.performOperation(event_registry, self.E.op(href=url))
         self.assertEqual(res["value"], "BAR")
 
         # test different URL
         res["value"] = "FOOBAR"
-        operation.performOperation(event_registry, E.op(href="pyofwave.info/Firefly"))
+        operation.performOperation(event_registry, self.E.op(href="pyofwave.info/Firefly"))
         self.assertEqual(res["value"], "FOOBAR")
 
         # Unregister one event
         res["value"] = "BARFOO"
         event_registry.unregister(url, "{%s}op" % ns)
-        operation.performOperation(event_registry, E.op(href=url))
+        operation.performOperation(event_registry, self.E.op(href=url))
         self.assertEqual(res["value"], "BARFOO")
         
         # Unregister all events

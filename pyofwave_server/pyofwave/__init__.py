@@ -18,7 +18,15 @@ def start(settings_mod=None):
     # Setup Wave Protocol
     import xmpp
     from pyofwave.protocols import WaveProtocol
-    server = xmpp.TCPServer(xmpp.XMPPHandler(WaveProtocol)).bind('127.0.0.1', 5222)
-    xmpp.start([server])
+    # from pyofwave.protocols.wave.wave import WaveOperation
+    server = xmpp.XMPPHandler(WaveProtocol)
+    #server = xmpp.Server({'plugins': [WaveOperation],
+    #                     'host': 'localhost',
+    #                      'users': {'user1': 'bob'}
+    #                      })
+    SP = xmpp.TCPServer(server).bind('127.0.0.1', 5222)
+    xmpp.log.setLevel(logging.DEBUG)
+    xmpp.start([SP])
+
 
 

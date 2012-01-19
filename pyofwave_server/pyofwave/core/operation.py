@@ -1,23 +1,97 @@
 """
 Standard interface for connecting client protocols to the operation extensions. 
 """
+from cStringIO import StringIO
+
+import lxml.etree, lxml.builder
+from zope import interface
+
 from delta import DeltaObserverPool as dop
 import opdev, delta
 
-# Perform operation
-def _getChildren(tag):
-    rep = [tag.text, ]
-    for child in tag:
-        rep.append(child)
-        rep.append(child.tail)
-    return rep
+from pyofwave.utils.command import CommandInterface
+from .action import ACTION_REGISTRY
 
-def performOperation(event, operation):
-    """ Execute a operation."""
-    rep = opdev._receive[operation.tag](event, *_getChildren(operation), **operation.attrib)
+from pyofwave.core.document.blip import Blip
 
-    EventRegisty.notify(operation)
-    return rep
+# Should be replaced by a xmpp.Plugin
+OPERATION_REGISTRY = {
+    '{pyofwave.info/2012/dtd/document.dtd}op': Blip
+    }
+
+class OperationBase(object):
+    """
+    An operation is a transformation that alters an entity (blip,
+    document, wave, ...) and is made of one or more Actions.
+    """
+    interface.implements(CommandInterface)
+
+    def do(self, aTarget):
+        """
+        Perform the operation using the scenario
+        """
+        cursor_position = 0 # Cursor index in the document
+
+        # Apply transformations using actions
+        for action in self.scenario():
+            cursor_position = action.do(aDocument=aTarget,
+                                        cursor_position=cursor_position)
+
+        assert(len(aTarget) == cursor_position)
+        
+    def scenario(self):
+        """
+        Yield here the flow of Actions required to perform this
+        operation.
+        """
+        raise NotImplementedError
+
+    def to_xml_etree(self):
+        """
+        Turns an operation to an XML etree
+        """
+        # XXX This namespace shouldn't be hardcoded
+        E = lxml.builder.ElementMaker(namespace="pyofwave.info/2012/dtd/document.dtd")
+        xml_etree = E.op()
+        for action in self.scenario():
+            xml_etree.append(action.to_xml_etree())
+
+        return xml_etree
+
+    def to_xml(self):
+        """
+        Turns an operation to an XML stream
+        """
+        return lxml.etree.tostring(self.to_xml_etree())
+
+
+class XMLOperation(OperationBase):
+    """
+    An Operation that reads its Actions from a XML stream.
+    """
+    def __init__(self, xml):
+        self.xml = xml
+    
+    def scenario(self):
+        # root = lxml.etree.fromstring(self.xml)
+        root = self.xml
+
+        # XXX This namespace shouldn't be hardcoded
+        # operation_tag = root.find(".//{pyofwave.info/2012/dtd/document.dtd}op")
+        operation_tag = root
+
+        for element in operation_tag.iterchildren():
+            # Lookup the action name (using: "{NS}NAME") from the
+            # action registry and yield the corresponding Action(s)
+            if element.tag in ACTION_REGISTRY:
+                kwargs = dict(element.items())
+                try:
+                    yield ACTION_REGISTRY[element.tag](**kwargs)
+                except Exception, e:
+                    raise OperationError("Wrong usage of '%s': %s" % (element.tag, e))
+
+            else:
+                raise OperationError("Unknown Action: %s" % element.tag)
 
 # Events
 def get(obj, prop, default = {}):
@@ -28,7 +102,9 @@ def get(obj, prop, default = {}):
 _handlers = {}
 
 class EventRegisty(object):
-    """Keeps track of all the events a user registers to."""
+    """
+    Keeps track of all the events a user registers to.
+    """
     def __init__(self, user, callback):
         self.user = user
         self._callback = callback
@@ -53,7 +129,7 @@ class EventRegisty(object):
             self._handlers(url, operation).remove(self._callback)
     
     @staticmethod
-    def notify(operation, src = None):
+    def notify(operation, src=None):
         if src == None: 
             src = operation.get("href", operation.get("src", ""))
 
@@ -67,3 +143,7 @@ class EventRegisty(object):
     @staticmethod
     def applyDelta(doc, delta):
         """ Calculate and send events. """
+
+## -- Exceptions -- #
+class OperationError(Exception):
+    pass
